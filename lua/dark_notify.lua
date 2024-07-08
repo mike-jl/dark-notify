@@ -191,9 +191,9 @@ function M.configure(config)
   local onchange = config.onchange
 
   local executable = nil
-  if (vim.fn.executable('dark-notify')) then
+  if (vim.fn.executable('dark-notify') == 1) then
     executable = 'dark-notify'
-  elseif (vim.fn.executable('dark-notify.exe')) then
+  elseif (vim.fn.executable('dark-notify.exe') == 1) then
     executable = 'dark-notify.exe'
   end
 
