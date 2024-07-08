@@ -1,25 +1,23 @@
 -- http://lua-users.org/wiki/StringTrim
 function trim6(s)
-   return s:match'^()%s*$' and '' or s:match'^%s*(.*%S)'
+  return s:match '^()%s*$' and '' or s:match '^%s*(.*%S)'
 end
 
 -- from norcalli/nvim_utils
 function nvim_create_augroups(definitions)
   for group_name, definition in pairs(definitions) do
-    vim.api.nvim_command('augroup '..group_name)
+    vim.api.nvim_command('augroup ' .. group_name)
     vim.api.nvim_command('autocmd!')
     for _, def in ipairs(definition) do
       -- if type(def) == 'table' and type(def[#def]) == 'function' then
       -- 	def[#def] = lua_callback(def[#def])
       -- end
-      local command = table.concat(vim.tbl_flatten{'autocmd', def}, ' ')
+      local command = table.concat(vim.tbl_flatten { 'autocmd', def }, ' ')
       vim.api.nvim_command(command)
     end
     vim.api.nvim_command('augroup END')
   end
 end
-
-
 
 local state = {
   initialized = false,
@@ -60,7 +58,7 @@ local function apply_mode(mode)
 
   -- now try to reload lightline
   local reloader = config.lightline_loaders[lltheme]
-  local lightline = vim.api.nvim_call_function("exists", {"g:loaded_lightline"})
+  local lightline = vim.api.nvim_call_function("exists", { "g:loaded_lightline" })
 
   if lightline == 1 then
     local update = false
@@ -87,6 +85,10 @@ local function apply_mode(mode)
 end
 
 function M.update()
+  local executable = get_config().executable
+  if (executable == nil) then
+    return
+  end
   local mode = vim.fn.system('dark-notify --exit')
   mode = trim6(mode)
   apply_mode(mode)
@@ -143,9 +145,14 @@ local function init_dark_notify()
     end
   end
 
+  local executable = get_config().executable
+  if (executable == nil) then
+    return
+  end
+
   handle, pid = vim.loop.spawn(
-    "dark-notify",
-    { stdio = {stdin, stdout, nil} },
+    executable,
+    { stdio = { stdin, stdout, nil } },
     vim.schedule_wrap(onexit)
   )
 
@@ -183,16 +190,24 @@ function M.configure(config)
   local schemes = config.schemes or {}
   local onchange = config.onchange
 
+  local executable = nil
+  if (vim.fn.executable('dark-notify')) then
+    executable = 'dark-notify'
+  elseif (vim.fn.executable('dark-notify.exe')) then
+    executable = 'dark-notify.exe'
+  end
+
   for _, mode in pairs({ "light", "dark" }) do
     if type(schemes[mode]) == "string" then
       schemes[mode] = { colorscheme = schemes[mode] }
     end
   end
 
-  edit_config(function (conf)
+  edit_config(function(conf)
     conf.lightline_loaders = lightline_loaders
     conf.schemes = schemes
     conf.onchange = onchange
+    conf.executable = executable
   end)
 end
 
